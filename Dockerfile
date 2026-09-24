@@ -32,7 +32,7 @@ EXPOSE 8501
 
 # Use entrypoint.sh so $PORT is read at runtime (Railway sets it dynamically).
 # Falls back to 8501 when PORT is not set (local docker, compose, etc.).
-CMD ["./entrypoint.sh"]
+CMD ["sh", "./entrypoint.sh"]
 
 # 1. Build the Docker image using the following command
 # docker build -t moneyprinterturbo .
