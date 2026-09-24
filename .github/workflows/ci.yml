@@ -60,15 +60,19 @@ jobs:
       - name: Run unit tests with coverage
         # pytest 兼容现有 unittest.TestCase，同时会收集仓库中的 pytest 风格
         # 测试，避免测试文件已存在但 CI 没有真正执行。
+        if: hashFiles('test/**/test_*.py', 'test/test_*.py') != ''
         run: uv run --no-sync python -X utf8 -m coverage run -m pytest -q test
 
       - name: Report test coverage
+        if: hashFiles('test/**/test_*.py', 'test/test_*.py') != ''
         run: uv run --no-sync python -m coverage report
 
       - name: Export coverage report
+        if: hashFiles('test/**/test_*.py', 'test/test_*.py') != ''
         run: uv run --no-sync python -m coverage xml
 
       - name: Upload coverage report
+        if: hashFiles('test/**/test_*.py', 'test/test_*.py') != ''
         uses: actions/upload-artifact@v4
         with:
           name: coverage-python-${{ matrix.python-version }}
@@ -101,6 +105,7 @@ jobs:
         run: uv run --no-sync python -m compileall app cli.py main.py webui test docs/skill
 
       - name: Run core service smoke tests
+        if: hashFiles('test/**/test_*.py', 'test/test_*.py') != ''
         run: >-
           uv run --no-sync python -X utf8 -m pytest -q
           test/services/test_config.py
