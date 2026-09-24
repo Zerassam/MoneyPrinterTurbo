@@ -1,0 +1,82 @@
+name: Sync to Hugging Face Space
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-to-huggingface
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out GitHub repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install and configure Git LFS
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends git-lfs
+          git lfs install --local
+          # Keep large runtime assets out of normal Git blobs. The patterns are
+          # applied in the temporary checkout before the history is migrated.
+          git lfs track \
+            "resource/fonts/**" \
+            "resource/songs/**" \
+            "*.jpg" \
+            "*.png" \
+            "*.jpeg" \
+            "*.gif" \
+            "*.webp" \
+            "*.mp3" \
+            "*.mp4" \
+            "*.ttc" \
+            "*.ttf" \
+            "**/*.mp3" \
+            "**/*.mp4" \
+            "**/*.wav" \
+            "**/*.m4a" \
+            "**/*.ttf" \
+            "**/*.ttc" \
+            "**/*.otf" \
+            "**/*.woff" \
+            "**/*.woff2"
+          git add .gitattributes
+          # git lfs migrate requires a clean working tree. Commit the generated
+          # tracking rules only inside the ephemeral Actions runner; this commit
+          # is included in the synchronized Space history, not pushed to GitHub.
+          git -c user.name="github-actions[bot]" \
+            -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -m "chore: configure git lfs tracking for Hugging Face sync"
+
+      - name: Rewrite large assets as Git LFS pointers
+        run: |
+          set -euo pipefail
+          git lfs migrate import --everything --include="resource/fonts/**,resource/songs/**,*.jpg,*.png,*.jpeg,*.gif,*.webp,*.mp3,*.mp4,*.ttc,*.ttf,**/*.jpg,**/*.png,**/*.jpeg,**/*.gif,**/*.webp,**/*.mp3,**/*.mp4,**/*.wav,**/*.m4a,**/*.ttf,**/*.ttc,**/*.otf,**/*.woff,**/*.woff2" --yes
+
+      - name: Push repository to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$HF_TOKEN" || {
+            echo "HF_TOKEN is not configured in GitHub repository secrets." >&2
+            exit 1
+          }
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add huggingface "https://oauth2:${HF_TOKEN}@huggingface.co/spaces/Zerassam/MoneyPrinterTurbo"
+          git lfs push --all huggingface
+          git push --force huggingface HEAD:main
