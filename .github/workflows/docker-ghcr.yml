@@ -21,7 +21,9 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  IMAGE_NAME: ghcr.io/harry0703/moneyprinterturbo
+  # Publish to the owner of this repository. Using the upstream owner's
+  # namespace makes forks fail at the push step with permission_denied.
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/moneyprinterturbo
 
 jobs:
   publish:
