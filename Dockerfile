@@ -12,7 +12,9 @@ ENV PYTHONPATH="/MoneyPrinterTurbo"
 # Install system dependencies from the official Debian repositories and clean
 # the apt cache so the Railway image stays small.
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends git ffmpeg && \
+    apt-get install -y --no-install-recommends git ffmpeg fonts-dejavu && \
+    mkdir -p /MoneyPrinterTurbo/resource/fonts && \
+    cp /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf /MoneyPrinterTurbo/resource/fonts/DejaVuSans.ttf && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy only the requirements.txt first to leverage Docker cache

@@ -7524,19 +7524,30 @@ def _render_subtitle_settings(panel, params):
             _set_runtime_config("ui", "subtitle_enabled", params.subtitle_enabled)
             subtitle_settings_disabled = not params.subtitle_enabled
             font_names = get_all_fonts()
+            if not font_names:
+                # A deployment without bundled fonts must not crash the whole
+                # Streamlit page. Disable subtitles until a usable font exists
+                # instead of passing an empty list to st.selectbox or failing
+                # later during subtitle rendering.
+                st.warning(tr("No subtitle fonts available"))
+                params.subtitle_enabled = False
+                subtitle_settings_disabled = True
             saved_font_name = config.ui.get(
                 "font_name", DEFAULT_SUBTITLE_SETTINGS["font_name"]
             )
             saved_font_name_index = 0
             if saved_font_name in font_names:
                 saved_font_name_index = font_names.index(saved_font_name)
-            params.font_name = stable_selectbox(
-                tr("Font"),
-                options=font_names,
-                default_value=font_names[saved_font_name_index] if font_names else "",
-                key="font_name_select",
-                disabled=subtitle_settings_disabled,
-            )
+            if font_names:
+                params.font_name = stable_selectbox(
+                    tr("Font"),
+                    options=font_names,
+                    default_value=font_names[saved_font_name_index],
+                    key="font_name_select",
+                    disabled=subtitle_settings_disabled,
+                )
+            else:
+                params.font_name = ""
             _set_runtime_config("ui", "font_name", params.font_name)
 
             subtitle_positions = [
